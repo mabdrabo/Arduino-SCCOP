@@ -1,31 +1,84 @@
 
 #include <SoftwareSerial.h>   //Software Serial Port
-#define RxD 10
-#define TxD 11
+#include <Canbus.h>
+
+#define BTRxD 10
+#define BTTxD 11
+#define CBRxD 4
+#define CBTxD 5
  
 #define DEBUG_ENABLED  1
- 
-SoftwareSerial blueToothSerial(RxD,TxD);
+
+char buffer[512];  //Data will be temporarily stored to this buffer before being written to the file
+char tempbuf[15];
+char lat_str[14];
+char lon_str[14];
+
+int LED2 = 7;
+int LED3 = 8;
+
+boolean scan = true;
+
+SoftwareSerial blueToothSerial(BTRxD,BTTxD);
+SoftwareSerial canbusSerial(CBRxD, CBTxD);
  
 void setup() {
   Serial.begin(9600);
+  canbusSerial.begin(4800);
   pinMode(0, INPUT);
-  pinMode(TxD, OUTPUT);
+  pinMode(BTTxD, OUTPUT);
+  pinMode(LED2, OUTPUT); 
+  
+  pinMode(LED3, OUTPUT); 
+ 
+  digitalWrite(LED2, LOW);
+  digitalWrite(LED3, LOW);
   setupBlueToothConnection();
+  
+  while (!Canbus.init(CANSPEED_250)) {
+    Serial.println("CAN Init");
+  }
+  Serial.println("CAN Init OK");
+  delay(1000);
 } 
  
 void loop() { 
   char recvChar;
-  while(1) {
-    if (blueToothSerial.available()) {  // check if there's any data sent from the remote bluetooth shield
-      recvChar = blueToothSerial.read();
-      Serial.print(recvChar);
-    }
+  if (blueToothSerial.available()) {  // check if there's any data sent from the remote bluetooth shield
+    recvChar = blueToothSerial.read();
+    Serial.print(recvChar);
+  }
+  if (scan) {
     if (Serial.available()) {  // check if there's any data sent from the local serial terminal, you can add the other applications here
       recvChar  = Serial.read();
       blueToothSerial.print(recvChar);
       blueToothSerial.print("\n");
     }
+    
+    digitalWrite(LED3, HIGH);
+    
+    if(Canbus.ecu_req(ENGINE_RPM,buffer) == 1) {         /* Request for engine RPM */
+      Serial.println(buffer);                         /* Display data on Serial Monitor */
+    }
+    Serial.println(buffer);
+   
+    if(Canbus.ecu_req(VEHICLE_SPEED,buffer) == 1) {
+      Serial.println(buffer);
+    }Serial.println(buffer);
+    
+    if(Canbus.ecu_req(ENGINE_COOLANT_TEMP,buffer) == 1) {
+      Serial.print(buffer);
+    }Serial.println(buffer);
+    
+    if(Canbus.ecu_req(THROTTLE,buffer) == 1) {
+      Serial.println(buffer);
+    }
+    Serial.println(buffer);
+    //  Canbus.ecu_req(O2_VOLTAGE,buffer);
+   
+   digitalWrite(LED3, LOW); 
+   delay(100);
+    
   }
 } 
  
