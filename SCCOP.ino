@@ -2,8 +2,8 @@
 #include <SoftwareSerial.h>   //Software Serial Port
 #include <Canbus.h>
 
-#define BTRxD 11
-#define BTTxD 9
+#define BTRxD 9
+#define BTTxD 6
 #define CBRxD 5
 #define CBTxD 4
  
