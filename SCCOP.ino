@@ -2,10 +2,10 @@
 #include <SoftwareSerial.h>   //Software Serial Port
 #include <Canbus.h>
 
-#define BTRxD 10
-#define BTTxD 11
-#define CBRxD 4
-#define CBTxD 5
+#define BTRxD 11
+#define BTTxD 9
+#define CBRxD 5
+#define CBTxD 4
  
 #define DEBUG_ENABLED  1
 
@@ -19,12 +19,12 @@ int LED3 = 8;
 
 boolean scan = true;
 
-SoftwareSerial blueToothSerial(BTRxD,BTTxD);
 SoftwareSerial canbusSerial(CBRxD, CBTxD);
+SoftwareSerial blueToothSerial(BTRxD,BTTxD);
  
 void setup() {
   Serial.begin(9600);
-  canbusSerial.begin(4800);
+//  canbusSerial.begin(4800);
   pinMode(0, INPUT);
   pinMode(BTTxD, OUTPUT);
   pinMode(LED2, OUTPUT); 
@@ -33,17 +33,17 @@ void setup() {
  
   digitalWrite(LED2, LOW);
   digitalWrite(LED3, LOW);
-  setupBlueToothConnection();
   
-  while (!Canbus.init(CANSPEED_250)) {
-    Serial.println("CAN Init");
-  }
-  Serial.println("CAN Init OK");
-  delay(1000);
+  setupCanbus();
+  setupBlueToothConnection();
 } 
  
 void loop() { 
   char recvChar;
+  if (canbusSerial.available()) {  // check if there's any data sent from the remote CANBUS shield
+    recvChar = canbusSerial.read();
+    Serial.print(recvChar);
+  }
   if (blueToothSerial.available()) {  // check if there's any data sent from the remote bluetooth shield
     recvChar = blueToothSerial.read();
     Serial.print(recvChar);
@@ -80,7 +80,15 @@ void loop() {
    delay(100);
     
   }
-} 
+}
+
+void setupCanbus() {
+  while (!Canbus.init(CANSPEED_250)) {
+    Serial.println("CAN Init");
+  }
+  Serial.println("CAN Init OK");
+  delay(1000);
+}
  
 void setupBlueToothConnection() {
   blueToothSerial.begin(38400); //Set BluetoothBee BaudRate to default baud rate 38400
