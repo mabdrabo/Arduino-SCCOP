@@ -4,12 +4,12 @@
 
 #define BTRxD 9
 #define BTTxD 6
-#define CBRxD 5
-#define CBTxD 4
+#define CBRxD 4
+#define CBTxD 5
  
 #define DEBUG_ENABLED  1
 
-char buffer[512];  //Data will be temporarily stored to this buffer before being written to the file
+char buffer[512];  //Data will be stored to this buffer
 char tempbuf[15];
 char lat_str[14];
 char lon_str[14];
@@ -18,13 +18,14 @@ int LED2 = 7;
 int LED3 = 8;
 
 boolean scan = true;
+int ecu_reqs[5] = {ENGINE_RPM,VEHICLE_SPEED, ENGINE_COOLANT_TEMP, THROTTLE};
 
 SoftwareSerial canbusSerial(CBRxD, CBTxD);
 SoftwareSerial blueToothSerial(BTRxD,BTTxD);
  
 void setup() {
   Serial.begin(9600);
-//  canbusSerial.begin(4800);
+  canbusSerial.begin(4800);
   pinMode(0, INPUT);
   pinMode(BTTxD, OUTPUT);
   pinMode(LED2, OUTPUT); 
@@ -42,48 +43,39 @@ void loop() {
   char recvChar;
   if (canbusSerial.available()) {  // check if there's any data sent from the remote CANBUS shield
     recvChar = canbusSerial.read();
-    Serial.print(recvChar);
+    Serial.print("CAN: "+recvChar);
   }
   if (blueToothSerial.available()) {  // check if there's any data sent from the remote bluetooth shield
     recvChar = blueToothSerial.read();
-    Serial.print(recvChar);
+    Serial.print("BT: "+recvChar);
   }
   if (scan) {
     if (Serial.available()) {  // check if there's any data sent from the local serial terminal, you can add the other applications here
       recvChar  = Serial.read();
-      blueToothSerial.print(recvChar);
-      blueToothSerial.print("\n");
+      blueToothSerial.println(recvChar);
     }
     
     digitalWrite(LED3, HIGH);
     
-    if(Canbus.ecu_req(ENGINE_RPM,buffer) == 1) {         /* Request for engine RPM */
-      Serial.println(buffer);                         /* Display data on Serial Monitor */
+    for (int i=0; i<sizeof(ecu_reqs); i++) {
+      if(Canbus.ecu_req(ecu_reqs[i],buffer) == 1) {         /* Request */
+        String data = i + strcat("#", buffer);
+        Serial.println(data);                         /* Display data on Serial Monitor */
+        blueToothSerial.println(data);                         /* Send data via Bluetooth */        
+      } else {
+        Serial.println(i+"#"+23);
+        blueToothSerial.println(i+"#"+23);                         /* Send data via Bluetooth */
+      }
     }
-    Serial.println(buffer);
-   
-    if(Canbus.ecu_req(VEHICLE_SPEED,buffer) == 1) {
-      Serial.println(buffer);
-    }Serial.println(buffer);
     
-    if(Canbus.ecu_req(ENGINE_COOLANT_TEMP,buffer) == 1) {
-      Serial.print(buffer);
-    }Serial.println(buffer);
-    
-    if(Canbus.ecu_req(THROTTLE,buffer) == 1) {
-      Serial.println(buffer);
-    }
-    Serial.println(buffer);
-    //  Canbus.ecu_req(O2_VOLTAGE,buffer);
-   
-   digitalWrite(LED3, LOW); 
-   delay(100);
+    digitalWrite(LED3, LOW); 
+    delay(100);
     
   }
 }
 
 void setupCanbus() {
-  while (!Canbus.init(CANSPEED_250)) {
+  while (!Canbus.init(CANSPEED_500)) {
     Serial.println("CAN Init");
   }
   Serial.println("CAN Init OK");
@@ -93,7 +85,7 @@ void setupCanbus() {
 void setupBlueToothConnection() {
   blueToothSerial.begin(38400); //Set BluetoothBee BaudRate to default baud rate 38400
   blueToothSerial.print("\r\n+STWMOD=0\r\n"); //set the bluetooth work in slave mode
-  blueToothSerial.print("\r\n+STNA=AEMUV-BT\r\n"); //set the bluetooth name as "SeeedBTSlave"
+  blueToothSerial.print("\r\n+STNA=SCCOP-BT\r\n"); //set the bluetooth name as "SeeedBTSlave"
   blueToothSerial.print("\r\n+STOAUT=1\r\n"); // Permit Paired device to connect me
   blueToothSerial.print("\r\n+STAUTO=0\r\n"); // Auto-connection should be forbidden here
   delay(2000); // This delay is required.
