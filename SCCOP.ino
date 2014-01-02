@@ -25,11 +25,10 @@ SoftwareSerial blueToothSerial(BTRxD,BTTxD);
  
 void setup() {
   Serial.begin(9600);
-  canbusSerial.begin(4800);
+
   pinMode(0, INPUT);
   pinMode(BTTxD, OUTPUT);
-  pinMode(LED2, OUTPUT); 
-  
+  pinMode(LED2, OUTPUT);   
   pinMode(LED3, OUTPUT); 
  
   digitalWrite(LED2, LOW);
@@ -52,7 +51,7 @@ void loop() {
   if (scan) {
     if (Serial.available()) {  // check if there's any data sent from the local serial terminal, you can add the other applications here
       recvChar  = Serial.read();
-      blueToothSerial.println(recvChar);
+      blueToothSerial.println("0=56");
     }
     
     digitalWrite(LED3, HIGH);
@@ -63,8 +62,8 @@ void loop() {
         Serial.println(data);                         /* Display data on Serial Monitor */
         blueToothSerial.println(data);                         /* Send data via Bluetooth */        
       } else {
-        Serial.println(i+"#"+23);
-        blueToothSerial.println(i+"#"+23);                         /* Send data via Bluetooth */
+//        Serial.println(i+"#23");
+//        blueToothSerial.println("m");                         /* Send data via Bluetooth */
       }
     }
     
@@ -75,6 +74,7 @@ void loop() {
 }
 
 void setupCanbus() {
+  canbusSerial.begin(4800);
   while (!Canbus.init(CANSPEED_500)) {
     Serial.println("CAN Init");
   }
