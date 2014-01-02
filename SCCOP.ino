@@ -49,10 +49,13 @@ void loop() {
     Serial.print("BT: "+recvChar);
   }
   if (scan) {
-    if (Serial.available()) {  // check if there's any data sent from the local serial terminal, you can add the other applications here
-      recvChar  = Serial.read();
-      blueToothSerial.println("0=56");
+    String s = "";
+    while (Serial.available()) {  // check if there's any data sent from the local serial terminal, you can add the other applications here
+    s += (char) Serial.read();
+//      blueToothSerial.println("0=56");
     }
+    blueToothSerial.println(s);
+    s = "";
     
     digitalWrite(LED3, HIGH);
     
