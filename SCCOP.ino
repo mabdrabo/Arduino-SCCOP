@@ -65,7 +65,7 @@ void loop() {
         Serial.println(data);                         /* Display data on Serial Monitor */
         blueToothSerial.println(data);                         /* Send data via Bluetooth */        
       } else {
-//        Serial.println(i+"#23");
+//        Serial.println(i+"=23");
 //        blueToothSerial.println("m");                         /* Send data via Bluetooth */
       }
     }
