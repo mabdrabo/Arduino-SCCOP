@@ -17,10 +17,10 @@ char lon_str[14];
 int LED2 = 7;
 int LED3 = 8;
 
-boolean scan = true;
+boolean scan = false;  // if set to false Simulation is activated
 int ecu_reqs[5] = {ENGINE_RPM,VEHICLE_SPEED, ENGINE_COOLANT_TEMP, THROTTLE};
 
-SoftwareSerial canbusSerial(CBRxD, CBTxD);
+//SoftwareSerial canbusSerial(CBRxD, CBTxD);
 SoftwareSerial blueToothSerial(BTRxD,BTTxD);
  
 void setup() {
@@ -34,16 +34,16 @@ void setup() {
   digitalWrite(LED2, LOW);
   digitalWrite(LED3, LOW);
   
-  setupCanbus();
+//  setupCanbus();
   setupBlueToothConnection();
 } 
  
 void loop() { 
   char recvChar;
-  if (canbusSerial.available()) {  // check if there's any data sent from the remote CANBUS shield
-    recvChar = canbusSerial.read();
-    Serial.print("CAN: "+recvChar);
-  }
+//  if (canbusSerial.available()) {  // check if there's any data sent from the remote CANBUS shield
+//    recvChar = canbusSerial.read();
+//    Serial.print("CAN: "+recvChar);
+//  }
   if (blueToothSerial.available()) {  // check if there's any data sent from the remote bluetooth shield
     recvChar = blueToothSerial.read();
     Serial.print("BT: "+recvChar);
@@ -51,8 +51,7 @@ void loop() {
   if (scan) {
     String s = "";
     while (Serial.available()) {  // check if there's any data sent from the local serial terminal, you can add the other applications here
-    s += (char) Serial.read();
-//      blueToothSerial.println("0=56");
+      s += (char) Serial.read();
     }
     blueToothSerial.println(s);
     s = "";
@@ -64,20 +63,39 @@ void loop() {
         String data = i + strcat("#", buffer);
         Serial.println(data);                         /* Display data on Serial Monitor */
         blueToothSerial.println(data);                         /* Send data via Bluetooth */        
-      } else {
-//        Serial.println(i+"=23");
-//        blueToothSerial.println("m");                         /* Send data via Bluetooth */
       }
     }
     
     digitalWrite(LED3, LOW); 
     delay(100);
     
+  } else {  // SIMULATION
+    int value = 0;
+    for (int A=0; A<256; A++) {
+      for (int index=0; index<6; index++) {
+        if (index == 0)       // rpm
+          value = (A*256)/4;
+        else if (index == 1)  // speed
+            value = A;
+        else if (index == 2)  // temperature
+            value = 6 + A%12;
+        else if (index == 3)  // throttle
+            value = A*100/255;
+        else if (index == 4)  // fuel level
+            value = 100 - (A*100/255) ;
+        else if (index == 5)  // engine load
+            value = A*100/255;
+
+        blueToothSerial.println(String(index)+"="+String(value));
+        delay(100);
+      }
+    }
+    delay(500);
   }
 }
 
 void setupCanbus() {
-  canbusSerial.begin(4800);
+//  canbusSerial.begin(4800);
   while (!Canbus.init(CANSPEED_500)) {
     Serial.println("CAN Init");
   }
