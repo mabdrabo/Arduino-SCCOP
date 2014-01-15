@@ -87,10 +87,10 @@ void loop() {
             value = A*100/255;
 
         blueToothSerial.println(String(index)+"="+String(value));
-        delay(100);
       }
+      delay(1000);  // update every second (to give time to upload to online database)
     }
-    delay(500);
+    delay(5000);  // 5 second pause before restarting simulation.
   }
 }
 
